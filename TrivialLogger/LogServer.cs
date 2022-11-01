@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace TrivialLogger
 {
@@ -20,17 +21,25 @@ namespace TrivialLogger
         private int _listenPort;
         private HttpListener _listener;
         private Hashtable _logTable;
+        private string _LogRoot;
 
-        public LogServer(int p)
+        public LogServer(int p, string root)
         {
             this._listenPort = p;
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{p}/");
             _logTable = new Hashtable();
+            _LogRoot = root;
+
         }
 
         public void Listen()
         {
+            var fullPath = Path.GetFullPath(this._LogRoot);
+            if(!Directory.Exists(fullPath))
+            {
+                Directory.CreateDirectory(fullPath);
+            }
             _listener.Start();
             while (true)
             {
@@ -38,40 +47,82 @@ namespace TrivialLogger
                 HttpListenerRequest req = context.Request;
 
                 log.Info($"Received request for {req.Url}");
+                string body;
                 using (var stream = req.InputStream)
                 {
                     var reader = new StreamReader(stream);
-                    var body = reader.ReadToEnd();
+                    body = reader.ReadToEnd();
                     log.Info(body);
-                    LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
-                    log.Info($"{request.LogPath}: {request.LogMessage}");
-                    this.WriteRequest(request);
                 }
-
-                HttpListenerResponse resp = context.Response;
-                resp.Headers.Set("Content-Type", "text/plain");
-
-                string data = "Hello there!";
-                byte[] buffer = Encoding.UTF8.GetBytes(data);
-                resp.ContentLength64 = buffer.Length;
-
-                Stream ros = resp.OutputStream;
-                ros.Write(buffer, 0, buffer.Length);
+                LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
+                log.Info($"{request.LogPath}: {request.LogMessage}");
+                try
+                {
+                    if(this.WriteRequest(request))
+                    {
+                        this._ResponseSuccess(context.Response);
+                        continue;
+                    }
+                    this._ResponseSuccess(context.Response);
+                }
+                catch(Exception e)
+                {
+                    log.Error(e.Message);
+                    this._ResponseFailure(context.Response);
+                }
             }
         }
 
         public bool WriteRequest(LogRequest request)
         {
-            var fullPath = Path.GetFullPath(request.LogPath);
+            var FileName = request.LogPath.Split('\\').LastOrDefault();
+            if(!this._IsLegalFileName(FileName))
+            {
+                log.Error($"Illegal filename: {FileName}");
+                return false;
+            }
+
+            var fullPath = Path.GetFullPath(Path.Combine(this._LogRoot, FileName));
+
             if (!this._logTable.ContainsKey(fullPath))
             {
                 this._logTable.Add(fullPath, new LogEntry(fullPath));
             }    
             var entry = (LogEntry)this._logTable[fullPath];
-            entry.Write(request.LogMessage);
+            string timestamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+            entry.Write($"{timestamp}: {request.LogMessage}");
             return true;
         }
 
+        private bool _IsLegalFileName(string filename)
+        {
+            Regex pattern = new Regex("[<>:\"/|?*;,\t\r ]");
+            if(pattern.Match(filename).Success)
+            {
+                return false;
+            }
+            return true;
+        }
 
+        private void _Respond(HttpListenerResponse responseObject, string message)
+        {
+            responseObject.Headers.Set("Content-Type", "text/plain");
+
+            byte[] buffer = Encoding.UTF8.GetBytes(message);
+            responseObject.ContentLength64 = buffer.Length;
+
+            Stream ros = responseObject.OutputStream;
+            ros.Write(buffer, 0, buffer.Length);
+        }
+
+        private void _ResponseSuccess(HttpListenerResponse responseObject)
+        {
+            _Respond(responseObject, "Success");
+        }
+
+        private void _ResponseFailure(HttpListenerResponse responseObject)
+        {
+            _Respond(responseObject, "Failure");
+        }
     }
 }

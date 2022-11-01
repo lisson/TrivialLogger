@@ -34,10 +34,12 @@ namespace TrivialLogger
         {
             if (_fileHandle != null)
             {
+                _fileHandle.Close();
                 _fileHandle.Dispose();
             }
             if(_sWriter != null)
             {
+                _sWriter.Close();
                 _sWriter.Dispose();
             }
         }
@@ -66,6 +68,7 @@ namespace TrivialLogger
                 {
                     this.OpenFile();
                 }
+                log.Debug($"Writing and flushing {logEntry}");
                 this._sWriter.WriteLine(logEntry);
                 this._sWriter.Flush();
                 this.LastUpdated = DateTime.Now;
@@ -73,7 +76,7 @@ namespace TrivialLogger
             }
             catch(Exception e)
             {
-                Console.Out.WriteLine(e.Message);
+                log.Error(e.Message);
             }
             return false;
         }

@@ -5,5 +5,6 @@
 Start the server
 
 The following PowerShell command will create a log with "Write Me" inside.
-> $payload = @{"LogPath"="G:\test.txt";"LogMessage"="Write me"}
+> $payload = @{"LogPath"="test.txt";"LogMessage"="Write me"}
 > Invoke-RestMethod http://localhost:8000 -Body $($payload | ConvertTo-Json)  -Method post
+
