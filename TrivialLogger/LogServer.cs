@@ -73,6 +73,17 @@ namespace TrivialLogger
             }
         }
 
+        public void Cleanup()
+        {
+            log.Info("Cleaning up !");
+            foreach(var key in this._logTable.Keys)
+            {
+                var entry = ((LogEntry)this._logTable[key]);
+                log.Info($"Closing {entry.LogFilePath}");
+                entry.Dispose(); ;
+            }
+        }
+
         public bool WriteRequest(LogRequest request)
         {
             var FileName = request.LogPath.Split('\\').LastOrDefault();

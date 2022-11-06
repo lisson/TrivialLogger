@@ -32,15 +32,13 @@ namespace TrivialLogger
 
         public virtual void Dispose()
         {
+            if (_sWriter != null)
+            {
+                _sWriter.Close();
+            }
             if (_fileHandle != null)
             {
                 _fileHandle.Close();
-                _fileHandle.Dispose();
-            }
-            if(_sWriter != null)
-            {
-                _sWriter.Close();
-                _sWriter.Dispose();
             }
         }
 
@@ -51,6 +49,8 @@ namespace TrivialLogger
             {
                 this._fileHandle = new FileStream(this.LogFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
                 this._sWriter = new StreamWriter(_fileHandle);
+                long endPoint = this._fileHandle.Length;
+                this._fileHandle.Seek(endPoint, SeekOrigin.Begin);
                 return true;
             }
             catch (Exception e)
