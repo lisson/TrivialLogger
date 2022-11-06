@@ -19,5 +19,11 @@ namespace TrivialLogger
             get;
             set;
         }
+
+        public string SourceHost
+        {
+            get;
+            set;
+        }
     }
 }

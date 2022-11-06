@@ -55,7 +55,8 @@ namespace TrivialLogger
                     log.Info(body);
                 }
                 LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
-                log.Info($"{request.LogPath}: {request.LogMessage}");
+                request.SourceHost = req.RemoteEndPoint.Address.ToString();
+                log.Info($"{request.SourceHost} {request.LogPath}: {request.LogMessage}");
                 try
                 {
                     if(this.WriteRequest(request))
@@ -87,13 +88,24 @@ namespace TrivialLogger
         public bool WriteRequest(LogRequest request)
         {
             var FileName = request.LogPath.Split('\\').LastOrDefault();
-            if(!this._IsLegalFileName(FileName))
+            if (!this._IsLegalFileName(FileName))
             {
                 log.Error($"Illegal filename: {FileName}");
                 return false;
             }
+            var paths = new String[]
+            {
+                this._LogRoot,
+                request.SourceHost.Replace(':', '_'),
+                FileName
+            };
+            var folder = Path.GetFullPath(Path.Combine(this._LogRoot, request.SourceHost.Replace(':', '_')));
+            if(!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
 
-            var fullPath = Path.GetFullPath(Path.Combine(this._LogRoot, FileName));
+            var fullPath = Path.GetFullPath(Path.Combine(paths));
 
             if (!this._logTable.ContainsKey(fullPath))
             {
