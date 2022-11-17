@@ -12,15 +12,17 @@ using System.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace TrivialLogger
 {
-    public class LogServer
+    public class LogServer : ObservableRecipient
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private int _listenPort;
         private HttpListener _listener;
         private Hashtable _logTable;
+        private LogRequestQueue m_queue;
         private string _LogRoot;
 
         public LogServer(int p, string root)
@@ -29,6 +31,7 @@ namespace TrivialLogger
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{p}/");
             _logTable = new Hashtable();
+            m_queue = new LogRequestQueue();
             _LogRoot = root;
 
         }
@@ -40,6 +43,7 @@ namespace TrivialLogger
             {
                 Directory.CreateDirectory(fullPath);
             }
+            m_queue.PropertyChanged += M_queue_PropertyChanged;
             _listener.Start();
             while (true)
             {
@@ -57,6 +61,8 @@ namespace TrivialLogger
                 LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
                 request.SourceHost = req.RemoteEndPoint.Address.ToString();
                 log.Info($"{request.SourceHost} {request.LogPath}: {request.LogMessage}");
+                m_queue.Enqueue(request);
+
                 try
                 {
                     if(this.WriteRequest(request))
@@ -72,6 +78,11 @@ namespace TrivialLogger
                     this._ResponseFailure(context.Response);
                 }
             }
+        }
+
+        private void M_queue_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            log.Info($"Queue changed. Queue size: {m_queue.RequestQueue.Count}");
         }
 
         public void Cleanup()

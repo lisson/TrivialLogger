@@ -7,6 +7,7 @@ namespace TrivialLogger
     public class LogEntry : IDisposable
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly object writeLock = new object();
         private FileStream _fileHandle;
         private StreamWriter _sWriter;
 
@@ -35,10 +36,12 @@ namespace TrivialLogger
             if (_sWriter != null)
             {
                 _sWriter.Close();
+                _sWriter = null;
             }
             if (_fileHandle != null)
             {
                 _fileHandle.Close();
+                _fileHandle = null;
             }
         }
 
