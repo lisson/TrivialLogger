@@ -12,13 +12,13 @@ namespace TrivialLogger
         private Queue<LogRequest> m_queue;
         private Object m_queueLock = new object();
 
-        public int TotalQueued
+        public long TotalQueued
         {
             get;
             private set;
         }
 
-        public int TotalDequeued
+        public long TotalDequeued
         {
             get;
             private set;

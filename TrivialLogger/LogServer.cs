@@ -44,6 +44,7 @@ namespace TrivialLogger
                 Directory.CreateDirectory(fullPath);
             }
             m_queue.PropertyChanged += M_queue_PropertyChanged;
+            StatsTracker.Collect();
             _listener.Start();
             while (true)
             {
@@ -128,6 +129,8 @@ namespace TrivialLogger
             entry.Write($"{timestamp}: {request.LogMessage}");
             _ResponseSuccess(request.responseObject);
             var delta = DateTime.Now - startTime;
+            StatsTracker.IncrementRequestsServiced();
+            StatsTracker.AddServiceTime(delta.Milliseconds);
             log.Info($"Request serviced in {delta.TotalMilliseconds} ms");
             return true;
         }
