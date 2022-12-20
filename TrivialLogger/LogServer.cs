@@ -148,15 +148,19 @@ namespace TrivialLogger
 
             Stream ros = responseObject.OutputStream;
             ros.Write(buffer, 0, buffer.Length);
+            ros.Close();
         }
 
         private void _ResponseSuccess(HttpListenerResponse responseObject)
         {
+            responseObject.StatusCode = (int)HttpStatusCode.OK;
+            responseObject.StatusDescription = "OK";
             _Respond(responseObject, "Success");
         }
 
         private void _ResponseFailure(HttpListenerResponse responseObject)
         {
+            responseObject.StatusCode = (int)HttpStatusCode.InternalServerError;
             _Respond(responseObject, "Failure");
         }
     }
