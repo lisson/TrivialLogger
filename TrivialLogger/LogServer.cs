@@ -57,23 +57,23 @@ namespace TrivialLogger
                 {
                     var reader = new StreamReader(stream);
                     body = reader.ReadToEnd();
-                    log.Info(body);
+                    log.Debug(body);
                 }
                 LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
                 request.SourceHost = req.RemoteEndPoint.Address.ToString();
                 request.responseObject = context.Response;
-                log.Info($"{request.SourceHost} {request.LogPath}: {request.LogMessage}");
+                log.Debug($"{request.SourceHost} {request.LogPath}: {request.LogMessage}");
                 m_queue.Enqueue(request);
             }
         }
 
         private void M_queue_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            log.Info($"Signal Name: {e.PropertyName}");
+            log.Debug($"Signal Name: {e.PropertyName}");
             switch (e.PropertyName)
             {
                 case "RequestQueue":
-                    log.Info($"Queue changed. Queue size: {m_queue.RequestQueue.Count}");
+                    log.Debug($"Queue changed. Queue size: {m_queue.RequestQueue.Count}");
                     break;
                 default:
                     break;
@@ -131,7 +131,7 @@ namespace TrivialLogger
             var delta = DateTime.Now - startTime;
             StatsTracker.IncrementRequestsServiced();
             StatsTracker.AddServiceTime(delta.Milliseconds);
-            log.Info($"Request serviced in {delta.TotalMilliseconds} ms");
+            log.Debug($"Request serviced in {delta.TotalMilliseconds} ms");
             return true;
         }
 

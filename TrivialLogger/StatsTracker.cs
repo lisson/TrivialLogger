@@ -57,9 +57,9 @@ namespace TrivialLogger
                 lastCount = m_RequestsServiced;
                 if (delta > 0)
                 {
-                    log.Debug($"Serviced {delta} requests in {deltaMs} ms. Average: {average} ms / request");
-                    log.Debug($"Total serviced {m_RequestsServiced} requests.");
-                    log.Debug($"Total service time {m_ServiceTimeMs} ms.");
+                    log.Info($"Serviced {delta} requests in {deltaMs} ms. Average: {average} ms / request");
+                    log.Info($"Total serviced {m_RequestsServiced} requests.");
+                    log.Info($"Total service time {m_ServiceTimeMs} ms.");
                 }
             }
         }
