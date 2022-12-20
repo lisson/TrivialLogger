@@ -12,6 +12,18 @@ namespace TrivialLogger
         private Queue<LogRequest> m_queue;
         private Object m_queueLock = new object();
 
+        public int TotalQueued
+        {
+            get;
+            private set;
+        }
+
+        public int TotalDequeued
+        {
+            get;
+            private set;
+        }
+
         public Queue<LogRequest> RequestQueue
         {
             get { return m_queue; }
@@ -21,6 +33,8 @@ namespace TrivialLogger
         public LogRequestQueue()
         {
             m_queue = new Queue<LogRequest>();
+            TotalQueued = 0;
+            TotalDequeued = 0;
         }
 
         public void Enqueue(LogRequest entry)
@@ -28,6 +42,7 @@ namespace TrivialLogger
             lock (m_queueLock)
             {
                 m_queue.Enqueue(entry);
+                TotalQueued++;
                 OnPropertyChanged("RequestQueue");
             }
         }
@@ -42,6 +57,7 @@ namespace TrivialLogger
                     return null;
                 }
                 entry  = m_queue.Dequeue();
+                TotalDequeued = 0;
                 OnPropertyChanged("RequestQueue");
             }
             return entry;

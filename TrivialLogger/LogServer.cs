@@ -93,6 +93,7 @@ namespace TrivialLogger
 
         public async Task<bool> WriteRequest()
         {
+            DateTime startTime = DateTime.Now;
             var request = m_queue.Dequeue();
             if(request == null)
             {
@@ -126,6 +127,8 @@ namespace TrivialLogger
             string timestamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
             entry.Write($"{timestamp}: {request.LogMessage}");
             _ResponseSuccess(request.responseObject);
+            var delta = DateTime.Now - startTime;
+            log.Info($"Request serviced in {delta.TotalMilliseconds} ms");
             return true;
         }
 
