@@ -60,29 +60,24 @@ namespace TrivialLogger
                 }
                 LogRequest request = JsonSerializer.Deserialize<LogRequest>(body);
                 request.SourceHost = req.RemoteEndPoint.Address.ToString();
+                request.responseObject = context.Response;
                 log.Info($"{request.SourceHost} {request.LogPath}: {request.LogMessage}");
                 m_queue.Enqueue(request);
-
-                try
-                {
-                    if(this.WriteRequest(request))
-                    {
-                        this._ResponseSuccess(context.Response);
-                        continue;
-                    }
-                    this._ResponseSuccess(context.Response);
-                }
-                catch(Exception e)
-                {
-                    log.Error(e.Message);
-                    this._ResponseFailure(context.Response);
-                }
             }
         }
 
         private void M_queue_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            log.Info($"Queue changed. Queue size: {m_queue.RequestQueue.Count}");
+            log.Info($"Signal Name: {e.PropertyName}");
+            switch (e.PropertyName)
+            {
+                case "RequestQueue":
+                    log.Info($"Queue changed. Queue size: {m_queue.RequestQueue.Count}");
+                    break;
+                default:
+                    break;
+            }
+            WriteRequest();
         }
 
         public void Cleanup()
@@ -96,8 +91,13 @@ namespace TrivialLogger
             }
         }
 
-        public bool WriteRequest(LogRequest request)
+        public async Task<bool> WriteRequest()
         {
+            var request = m_queue.Dequeue();
+            if(request == null)
+            {
+                return true;
+            }
             var FileName = request.LogPath.Split('\\').LastOrDefault();
             if (!this._IsLegalFileName(FileName))
             {
@@ -125,6 +125,7 @@ namespace TrivialLogger
             var entry = (LogEntry)this._logTable[fullPath];
             string timestamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
             entry.Write($"{timestamp}: {request.LogMessage}");
+            _ResponseSuccess(request.responseObject);
             return true;
         }
 

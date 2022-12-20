@@ -37,6 +37,10 @@ namespace TrivialLogger
             LogRequest entry = null;
             lock (m_queueLock)
             {
+                if(m_queue.Count == 0)
+                {
+                    return null;
+                }
                 entry  = m_queue.Dequeue();
                 OnPropertyChanged("RequestQueue");
             }
